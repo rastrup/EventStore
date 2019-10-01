@@ -364,10 +364,17 @@ namespace EventStore.ClientAPI.Internal {
 
 		public Task<EventStoreSubscription> SubscribeToAllFilteredAsync(bool resolveLinkTos, Filter filter,
 			Func<EventStoreSubscription, ResolvedEvent, Task> eventAppeared,
-			Func<EventStoreSubscription, Position, Task> checkpointReached,
-			int sendCheckpointMessageCount, Action<EventStoreSubscription, SubscriptionDropReason, Exception> subscriptionDropped = null,
+			Func<EventStoreSubscription, Position, Task> checkpointReached, int sendCheckpointMessageCount,
+			Action<EventStoreSubscription, SubscriptionDropReason, Exception> subscriptionDropped = null,
 			UserCredentials userCredentials = null) {
-			throw new NotImplementedException();
+			Ensure.NotNull(eventAppeared, "eventAppeared");
+			Ensure.NotNull(filter, nameof(filter));
+
+			var source = TaskCompletionSourceFactory.Create<EventStoreSubscription>();
+			_handler.EnqueueMessage(new StartFilteredSubscriptionMessage(source, string.Empty, resolveLinkTos,
+				sendCheckpointMessageCount, filter, userCredentials, eventAppeared, checkpointReached,
+				subscriptionDropped, Settings.MaxRetries, Settings.OperationTimeout));
+			return source.Task;
 		}
 
 		public EventStoreAllCatchUpSubscription SubscribeToAllFrom(

@@ -29,14 +29,14 @@ namespace EventStore.ClientAPI.ClientOperations {
 		protected readonly bool _resolveLinkTos;
 		protected readonly UserCredentials _userCredentials;
 		protected readonly Func<T, TE, Task> _eventAppeared;
+		protected int _unsubscribed;
 		private readonly Action<T, SubscriptionDropReason, Exception> _subscriptionDropped;
 		private readonly bool _verboseLogging;
 		protected readonly Func<TcpPackageConnection> _getConnection;
 		private readonly int _maxQueueSize = 2000;
 		private readonly ConcurrentQueueWrapper<Func<Task>> _actionQueue = new ConcurrentQueueWrapper<Func<Task>>();
 		private int _actionExecuting;
-		private T _subscription;
-		private int _unsubscribed;
+		protected T _subscription;
 		protected Guid _correlationId;
 
 		protected SubscriptionOperation(ILogger log,
@@ -253,7 +253,7 @@ namespace EventStore.ClientAPI.ClientOperations {
 			ExecuteActionAsync(() => _eventAppeared(_subscription, e));
 		}
 
-		private void ExecuteActionAsync(Func<Task> action) {
+		protected internal void ExecuteActionAsync(Func<Task> action) {
 			_actionQueue.Enqueue(action);
 
 			if (_actionQueue.Count > _maxQueueSize)
